@@ -8,7 +8,7 @@ type Kind = "video" | "audio";
 // network round trip instead of after one.
 const ALLOWED_TYPES: Record<Kind, string[]> = {
   video: ["video/mp4", "video/webm", "video/quicktime"],
-  audio: ["audio/mpeg", "audio/mp4", "audio/wav", "audio/x-wav", "audio/webm", "audio/ogg"],
+  audio: ["audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/webm", "audio/ogg"],
 };
 const MAX_BYTES: Record<Kind, number> = {
   video: 25 * 1024 * 1024,
@@ -70,7 +70,8 @@ export default function RecorderWidget({
   }
 
   function validate(file: File): string | null {
-    if (!ALLOWED_TYPES[kind].includes(file.type)) {
+    const contentType = file.type.split(";", 1)[0].trim().toLowerCase();
+    if (!ALLOWED_TYPES[kind].includes(contentType)) {
       return `That file type (${file.type || "unknown"}) isn't supported. Use: ${ALLOWED_TYPES[kind].join(", ")}.`;
     }
     if (file.size === 0) {
