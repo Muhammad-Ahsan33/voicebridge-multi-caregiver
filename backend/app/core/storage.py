@@ -42,7 +42,11 @@ _SUPABASE_HEADERS = {
 }
 
 
+
 def _ext_for_content_type(content_type: str) -> str:
+    # Remove codec parameters and normalize the MIME type
+    content_type = content_type.split(";", 1)[0].strip().lower()
+
     mapping = {
         "video/mp4": ".mp4",
         "video/webm": ".webm",
@@ -55,7 +59,9 @@ def _ext_for_content_type(content_type: str) -> str:
         "audio/webm": ".webm",
         "audio/ogg": ".ogg",
     }
+
     return mapping.get(content_type, "")
+
 
 
 def build_object_path(user_id: str, message_id: str, content_type: str) -> str:
