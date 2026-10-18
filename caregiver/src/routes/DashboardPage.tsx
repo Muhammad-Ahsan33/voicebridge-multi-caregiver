@@ -254,7 +254,12 @@ export default function DashboardPage() {
                       <tr key={c.id} className="border-t border-ink/5">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <Avatar color={c.avatarColor} initials={c.initials} size={40} />
+                            <Avatar
+                              color={c.avatarColor}
+                              initials={c.initials}
+                              imageUrl={c.avatarUrl}
+                              size={40}
+                            />
                             <span className="font-medium text-ink">{c.name}</span>
                           </div>
                         </td>

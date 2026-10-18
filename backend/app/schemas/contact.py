@@ -25,3 +25,4 @@ class ContactUpdate(CamelModel):
 
 class ContactOut(ContactBase):
     id: str
+    avatar_url: str | None = None

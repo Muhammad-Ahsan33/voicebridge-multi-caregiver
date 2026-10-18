@@ -18,5 +18,6 @@ class Contact(Base):
     relationship: Mapped[str] = mapped_column(String, nullable=False, default="")
     avatar_color: Mapped[str] = mapped_column(String, nullable=False, default="#2D6E8E")
     initials: Mapped[str] = mapped_column(String, nullable=False, default="")
+    avatar_url: Mapped[str | None] = mapped_column(String, nullable=True)
     phone: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

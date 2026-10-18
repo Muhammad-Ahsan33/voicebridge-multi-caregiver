@@ -57,8 +57,10 @@ to in `seed.py`).
   caregiver gets an immediate, specific error instead of waiting on a
   round trip to be told the file's no good. Camera/mic denial falls back
   cleanly to the file-upload option with a plain-language explanation.
-- **Contact form**: name/relationship/phone (loose E.164 check)/avatar
-  color/initials.
+- **Contact form**: name/relationship/phone (loose E.164 check), avatar
+  color/fallback initials, and optional JPEG/PNG/WebP contact photo upload
+  (up to 5MB). The selected photo previews in the form and replaces initials
+  in the contact list; initials remain as a fallback if the image can't load.
 
 ## Design notes
 

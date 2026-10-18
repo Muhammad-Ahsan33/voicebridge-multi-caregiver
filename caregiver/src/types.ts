@@ -28,6 +28,7 @@ export interface Contact {
   relationship: string;
   avatarColor: string;
   initials: string;
+  avatarUrl?: string | null;
   phone: string;
 }
 

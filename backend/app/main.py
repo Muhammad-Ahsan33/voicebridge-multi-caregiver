@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect, text
 
 from app.config import settings
 from app.core.storage import LOCAL_STORAGE_ROOT, USE_SUPABASE
@@ -39,6 +40,10 @@ def on_startup() -> None:
     # Convenience for local/dev only. In production, use Alembic migrations
     # (`alembic upgrade head`) instead of relying on this.
     Base.metadata.create_all(bind=engine)
+    contact_columns = {column["name"] for column in inspect(engine).get_columns("contacts")}
+    if "avatar_url" not in contact_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE contacts ADD COLUMN avatar_url VARCHAR"))
 
 
 @app.get("/health")

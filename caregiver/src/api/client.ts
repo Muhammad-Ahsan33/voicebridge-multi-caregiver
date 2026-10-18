@@ -6,6 +6,11 @@
  */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+export function resolveMediaUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  return url.startsWith("/") ? `${API_BASE_URL}${url}` : url;
+}
+
 const TOKEN_KEY = "voicebridge_caregiver_token";
 
 export function getToken(): string | null {
