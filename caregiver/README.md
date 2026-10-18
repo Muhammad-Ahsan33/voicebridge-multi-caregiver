@@ -44,12 +44,13 @@ to in `seed.py`).
   chips, a "has audio ✓ / missing audio ⚠" indicator per message (a
   message with no audio can't actually be sent to a patient's contact),
   and Edit/Delete per row with a confirm dialog before deleting.
-- **Message form**: title/category/color/initials fields save first via
+- **Message form**: title/category/color fields save first via
   `POST`/`PUT /messages`; the two `RecorderWidget`s underneath stay
   disabled until the message has an id, matching the backend's real
   constraint that upload endpoints need an existing `message_id`.
 - **RecorderWidget**: record live (`MediaRecorder`, camera preview for
-  video, 8s/6s hard caps) or upload an existing file, either way ending
+  video, an 8s video cap, and no audio duration cap) or upload an existing
+  file; visual uploads can be either a video or an image. Both flows end
   in a prereview-with-Re-record/Use-this step before it ever calls the
   upload API. Client-side validates against the exact mime types and size
   limits enforced server-side (`backend/app/routers/messages.py`), so a

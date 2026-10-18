@@ -5,7 +5,6 @@ export type MessageInput = {
   title: string;
   categoryId: CategoryId;
   thumbColor: string;
-  initials: string;
 };
 
 export function listMessages(category?: CategoryId): Promise<Message[]> {

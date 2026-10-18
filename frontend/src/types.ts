@@ -16,10 +16,10 @@ export interface Message {
   id: string;
   title: string; // written label, kept minimal — video/audio carry the meaning
   categoryId: CategoryId;
-  videoUrl?: string; // human-recorded clip, plays locally for identification
+  videoUrl?: string; // video or image shown locally for identification
   audioUrl?: string; // human-recorded audio, this is what actually gets sent
-  thumbColor: string; // fallback avatar color when no video is uploaded yet
-  initials: string; // fallback avatar initials when no video is uploaded yet
+  thumbColor: string; // fallback avatar color when no visual media is uploaded yet
+  initials: string; // fallback avatar initials when no visual media is uploaded yet
 }
 
 export interface Contact {
