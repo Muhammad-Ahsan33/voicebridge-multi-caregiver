@@ -37,7 +37,7 @@ export default function ContactPicker({ contacts, onBack, onSelect }: Props) {
               className="flex flex-col items-center gap-3 bg-surface rounded-card shadow-card hover:shadow-cardHover
                 active:scale-[0.96] transition-all py-6 px-3"
             >
-              <Avatar color={c.avatarColor} label={c.initials} size="lg" />
+              <Avatar color={c.avatarColor} label={c.initials} imageUrl={c.avatarUrl} size="lg" />
               <div className="text-center">
                 <p className="font-bold text-lg leading-tight">{c.name}</p>
                 <p className="text-sm text-inkmuted">{c.relationship}</p>

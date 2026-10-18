@@ -45,7 +45,7 @@ export default function ConfirmSend({ message, contact, onBack, onCancel, onSend
         </div>
 
         <div className="flex items-center gap-3 bg-surface rounded-full shadow-card px-5 py-3">
-          <Avatar color={contact.avatarColor} label={contact.initials} size="md" />
+          <Avatar color={contact.avatarColor} label={contact.initials} imageUrl={contact.avatarUrl} size="md" />
           <p className="font-bold text-lg">{contact.name}</p>
         </div>
 

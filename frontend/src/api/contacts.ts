@@ -1,6 +1,10 @@
 import type { Contact } from "../types";
-import { apiRequest } from "./client";
+import { apiRequest, resolveMediaUrl } from "./client";
 
-export function listContacts(): Promise<Contact[]> {
-  return apiRequest<Contact[]>("/contacts");
+export async function listContacts(): Promise<Contact[]> {
+  const contacts = await apiRequest<Contact[]>("/contacts");
+  return contacts.map((contact) => ({
+    ...contact,
+    avatarUrl: resolveMediaUrl(contact.avatarUrl),
+  }));
 }
