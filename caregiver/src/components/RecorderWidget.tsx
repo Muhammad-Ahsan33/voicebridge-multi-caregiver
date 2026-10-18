@@ -1,25 +1,29 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Camera, Mic, Upload, RotateCcw, Check, Loader2 } from "lucide-react";
+import { isImageMedia } from "../utils/media";
 
 type Kind = "video" | "audio";
 
-// Mirrors backend/app/routers/messages.py's ALLOWED_VIDEO_TYPES / ALLOWED_AUDIO_TYPES
+// Mirrors backend/app/routers/messages.py's ALLOWED_VISUAL_TYPES / ALLOWED_AUDIO_TYPES
 // and max_video_bytes / max_audio_bytes, so we can reject bad files before a
 // network round trip instead of after one.
 const ALLOWED_TYPES: Record<Kind, string[]> = {
-  video: ["video/mp4", "video/webm", "video/quicktime"],
+  video: [
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ],
   audio: ["audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/webm", "audio/ogg"],
 };
 const MAX_BYTES: Record<Kind, number> = {
   video: 25 * 1024 * 1024,
   audio: 8 * 1024 * 1024,
 };
-// Short identification/message clips, not long recordings (matches the
-// "3-5 second clip" example from the original project brief).
-const MAX_SECONDS: Record<Kind, number> = {
-  video: 8,
-  audio: 6,
-};
+const MAX_VIDEO_SECONDS = 8;
 
 type Stage = "idle" | "permission" | "requesting" | "recording" | "preview" | "uploading" | "denied";
 
@@ -43,7 +47,7 @@ export default function RecorderWidget({
   onUpload,
 }: RecorderWidgetProps) {
   const [stage, setStage] = useState<Stage>("idle");
-  const [secondsLeft, setSecondsLeft] = useState(MAX_SECONDS[kind]);
+  const [secondsLeft, setSecondsLeft] = useState(kind === "video" ? MAX_VIDEO_SECONDS : 0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -139,30 +143,32 @@ export default function RecorderWidget({
       recorderRef.current = recorder;
       recorder.start();
       setStage("recording");
-      setSecondsLeft(MAX_SECONDS[kind]);
-      timerRef.current = window.setInterval(() => {
-        setSecondsLeft((s) => {
-          if (s <= 1) {
-            recorder.stop();
-            if (timerRef.current) window.clearInterval(timerRef.current);
-            return 0;
-          }
-          return s - 1;
-        });
-      }, 1000);
+      if (kind === "video") {
+        setSecondsLeft(MAX_VIDEO_SECONDS);
+        timerRef.current = window.setInterval(() => {
+          setSecondsLeft((s) => {
+            if (s <= 1) {
+              if (recorder.state === "recording") recorder.stop();
+              if (timerRef.current) window.clearInterval(timerRef.current);
+              return 0;
+            }
+            return s - 1;
+          });
+        }, 1000);
+      }
     } catch {
       stopStream();
       setStage("denied");
       setError(
         kind === "video"
-          ? "We couldn't access your camera or microphone. You can still upload a video file below."
+          ? "We couldn't access your camera or microphone. You can still upload a video or image below."
           : "We couldn't access your microphone. You can still upload an audio file below."
       );
     }
   }
 
   function stopRecordingEarly() {
-    recorderRef.current?.stop();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     if (timerRef.current) window.clearInterval(timerRef.current);
   }
 
@@ -223,13 +229,15 @@ export default function RecorderWidget({
         <div className="mt-4">
           {currentUrl && stage === "idle" && (
             <div className="mb-3">
-              {kind === "video" ? (
+              {kind === "video" && isImageMedia(currentUrl) ? (
+                <img src={currentUrl} alt="" className="w-full max-w-xs rounded-lg" />
+              ) : kind === "video" ? (
                 <video src={currentUrl} controls className="w-full max-w-xs rounded-lg" />
               ) : (
                 <audio src={currentUrl} controls className="w-full max-w-xs" />
               )}
               <p className="mt-1 text-xs text-inkmuted">
-                Current {kind}. Record or upload a new one to replace it.
+                {kind === "video" ? "Current video or image." : "Current audio."} Record or upload a new one to replace it.
               </p>
             </div>
           )}
@@ -248,7 +256,7 @@ export default function RecorderWidget({
                 onClick={() => fileInputRef.current?.click()}
                 className="inline-flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
-                <Upload size={16} /> Upload file
+                <Upload size={16} /> {kind === "video" ? "Upload video or image" : "Upload file"}
               </button>
               <input
                 ref={fileInputRef}
@@ -299,7 +307,9 @@ export default function RecorderWidget({
               )}
               <div className="flex items-center gap-3">
                 <span className="flex h-3 w-3 animate-pulse rounded-full bg-emergency" aria-hidden="true" />
-                <span className="text-sm font-medium text-ink">Recording… {secondsLeft}s left</span>
+                <span className="text-sm font-medium text-ink">
+                  {kind === "video" ? `Recording… ${secondsLeft}s left` : "Recording…"}
+                </span>
                 <button
                   type="button"
                   onClick={stopRecordingEarly}
@@ -313,7 +323,9 @@ export default function RecorderWidget({
 
           {stage === "preview" && previewUrl && (
             <div className="space-y-3">
-              {kind === "video" ? (
+              {kind === "video" && pendingFile && isImageMedia(pendingFile.type) ? (
+                <img src={previewUrl} alt="" className="w-full max-w-xs rounded-lg" />
+              ) : kind === "video" ? (
                 <video src={previewUrl} controls className="w-full max-w-xs rounded-lg" />
               ) : (
                 <audio src={previewUrl} controls className="w-full max-w-xs" />
@@ -331,7 +343,7 @@ export default function RecorderWidget({
                   onClick={confirmUpload}
                   className="inline-flex items-center gap-2 rounded-lg bg-sage px-4 py-2 text-sm font-semibold text-white hover:bg-sage/90"
                 >
-                  <Check size={16} /> Use this {kind}
+                  <Check size={16} /> Use this {kind === "video" ? "video or image" : kind}
                 </button>
               </div>
             </div>
@@ -350,7 +362,7 @@ export default function RecorderWidget({
                 onClick={() => fileInputRef.current?.click()}
                 className="inline-flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary-light"
               >
-                <Upload size={16} /> Upload file instead
+                <Upload size={16} /> {kind === "video" ? "Upload video or image instead" : "Upload file instead"}
               </button>
               <input
                 ref={fileInputRef}

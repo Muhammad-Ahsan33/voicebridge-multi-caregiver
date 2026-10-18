@@ -11,6 +11,7 @@ import * as contactsApi from "../api/contacts";
 import * as patientsApi from "../api/patients";
 import type { Message, Contact, CategoryId, Patient } from "../types";
 import { ApiError } from "../api/client";
+import { isImageMedia } from "../utils/media";
 
 type Tab = "messages" | "contacts";
 type DeleteTarget =
@@ -163,9 +164,17 @@ export default function DashboardPage() {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               {m.videoUrl ? (
-                                <video src={m.videoUrl} className="h-11 w-11 rounded-full object-cover" muted />
+                                isImageMedia(m.videoUrl) ? (
+                                  <img src={m.videoUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
+                                ) : (
+                                  <video src={m.videoUrl} className="h-11 w-11 rounded-full object-cover" muted />
+                                )
                               ) : (
-                                <Avatar color={m.thumbColor} initials={m.initials} size={44} />
+                                <Avatar
+                                  color={m.thumbColor}
+                                  initials={m.initials || m.title.trim().charAt(0).toUpperCase()}
+                                  size={44}
+                                />
                               )}
                               <span className="font-medium text-ink">{m.title}</span>
                             </div>

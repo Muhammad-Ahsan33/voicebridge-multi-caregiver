@@ -3,6 +3,7 @@ import { ArrowLeft, Volume2, CheckCircle2 } from "lucide-react";
 import type { Message } from "../types";
 import Avatar from "./Avatar";
 import ProgressSteps from "./ProgressSteps";
+import { isImageMedia } from "../utils/media";
 
 interface Props {
   message: Message;
@@ -45,20 +46,29 @@ export default function PreviewScreen({ message, onBack, onConfirm }: Props) {
       <main className="flex-1 flex flex-col items-center justify-center gap-6 px-6 pb-10">
         <div className="w-full max-w-sm aspect-square rounded-card overflow-hidden shadow-cardHover relative">
           {message.videoUrl ? (
-            <video
-              src={message.videoUrl}
-              autoPlay
-              playsInline
-              loop
-              muted
-              className="w-full h-full object-cover"
-            />
+            isImageMedia(message.videoUrl) ? (
+              <img src={message.videoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <video
+                src={message.videoUrl}
+                autoPlay
+                playsInline
+                loop
+                muted
+                className="w-full h-full object-cover"
+              />
+            )
           ) : (
             <div
               className="w-full h-full flex items-center justify-center"
               style={{ backgroundColor: message.thumbColor + "22" }}
             >
-              <Avatar color={message.thumbColor} label={message.initials} size="xl" rounded="card" />
+              <Avatar
+                color={message.thumbColor}
+                label={message.initials || message.title.trim().charAt(0).toUpperCase()}
+                size="xl"
+                rounded="card"
+              />
             </div>
           )}
         </div>

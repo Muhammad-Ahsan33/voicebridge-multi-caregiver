@@ -10,8 +10,27 @@ from app.schemas.message import MessageCreate, MessageOut, MessageUpdate
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
-ALLOWED_VIDEO_TYPES = {"video/mp4", "video/webm", "video/quicktime"}
-ALLOWED_AUDIO_TYPES = {"audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/webm", "audio/ogg"}
+ALLOWED_VISUAL_TYPES = {
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+}
+# ALLOWED_AUDIO_TYPES = {"audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/webm", "audio/ogg"}
+
+
+ALLOWED_AUDIO_TYPES = {
+    "audio/mpeg",
+    "audio/mp4",
+    "audio/x-m4a",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/webm",
+    "audio/ogg",
+}
 
 
 def _to_out(message: Message) -> MessageOut:
@@ -81,16 +100,52 @@ def delete_message(message_id: str, db: Session = Depends(get_db), patient: Pati
     db.commit()
 
 
-async def _read_and_validate(file: UploadFile, allowed_types: set[str], max_bytes: int, kind: str) -> bytes:
-    content_type = (file.content_type or "").split(";")[0].strip().lower()
+# async def _read_and_validate(file: UploadFile, allowed_types: set[str], max_bytes: int, kind: str) -> bytes:
+#     content_type = (file.content_type or "").split(";")[0].strip().lower()
+#     if content_type not in allowed_types:
+#         raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, f"Unsupported {kind} type: {file.content_type}")
+#     content = await file.read()
+#     if len(content) > max_bytes:
+#         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, f"{kind.capitalize()} file exceeds the {max_bytes // (1024*1024)}MB limit")
+#     if len(content) == 0:
+#         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Uploaded {kind} file is empty")
+#     return content
+
+
+
+async def _read_and_validate(
+    file: UploadFile,
+    allowed_types: set[str],
+    max_bytes: int,
+    kind: str,
+) -> tuple[bytes, str]:
+    content_type = (file.content_type or "").split(";", 1)[0].strip().lower()
+
     if content_type not in allowed_types:
-        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, f"Unsupported {kind} type: {file.content_type}")
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=(
+                f"Unsupported {kind} type: {file.content_type}. "
+                f"Supported types: {', '.join(sorted(allowed_types))}"
+            ),
+        )
+
     content = await file.read()
+
     if len(content) > max_bytes:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, f"{kind.capitalize()} file exceeds the {max_bytes // (1024*1024)}MB limit")
-    if len(content) == 0:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Uploaded {kind} file is empty")
-    return content
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"{kind.capitalize()} file exceeds the "
+                   f"{max_bytes // (1024 * 1024)}MB limit",
+        )
+
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Uploaded {kind} file is empty",
+        )
+
+    return content, content_type
 
 
 @router.post("/{message_id}/upload-video", response_model=MessageOut)
@@ -101,14 +156,23 @@ async def upload_video(
     patient: Patient = Depends(get_current_patient),
 ):
     message = _get_owned_message(db, patient, message_id)
-    content = await _read_and_validate(file, ALLOWED_VIDEO_TYPES, settings.max_video_bytes, "video")
+    
+    content, content_type = await _read_and_validate(
+        file, ALLOWED_VISUAL_TYPES, settings.max_video_bytes, "video or image"
+    )
+
     delete_file(settings.video_bucket, message.video_url)
-    path = build_object_path(patient.id, message.id, file.content_type)
-    stored_path = upload_file(settings.video_bucket, path, content, file.content_type)
+
+    path = build_object_path(patient.id, message.id, content_type)
+    stored_path = upload_file(
+        settings.video_bucket, path, content, content_type
+    )
+
     message.video_url = stored_path
     db.commit()
     db.refresh(message)
     return _to_out(message)
+
 
 
 @router.post("/{message_id}/upload-audio", response_model=MessageOut)
@@ -119,10 +183,18 @@ async def upload_audio(
     patient: Patient = Depends(get_current_patient),
 ):
     message = _get_owned_message(db, patient, message_id)
-    content = await _read_and_validate(file, ALLOWED_AUDIO_TYPES, settings.max_audio_bytes, "audio")
+    
+    content, content_type = await _read_and_validate(
+        file, ALLOWED_AUDIO_TYPES, settings.max_audio_bytes, "audio"
+    )
+
     delete_file(settings.audio_bucket, message.audio_url)
-    path = build_object_path(patient.id, message.id, file.content_type)
-    stored_path = upload_file(settings.audio_bucket, path, content, file.content_type)
+
+    path = build_object_path(patient.id, message.id, content_type)
+    stored_path = upload_file(
+        settings.audio_bucket, path, content, content_type
+    )
+
     message.audio_url = stored_path
     db.commit()
     db.refresh(message)

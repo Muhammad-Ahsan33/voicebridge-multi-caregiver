@@ -29,10 +29,7 @@ function PatientApp() {
 
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [lastSend, setLastSend] = useState<{ whatsappUrl: string | null; audioUrl: string | null }>({
-    whatsappUrl: null,
-    audioUrl: null,
-  });
+  const [lastSend, setLastSend] = useState<{ whatsappUrl: string | null }>({ whatsappUrl: null });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -99,7 +96,7 @@ function PatientApp() {
           setSendError("This message doesn't have a recording yet. Ask a caregiver to add one.");
           return;
         }
-        setLastSend({ whatsappUrl: result.whatsappUrl, audioUrl: result.audioUrl ?? null });
+        setLastSend({ whatsappUrl: result.whatsappUrl });
         if (popup) popup.location.href = result.whatsappUrl;
         setScreen({ name: "sent", messageId: screen.messageId, contactId: screen.contactId });
       } catch (err) {
@@ -135,7 +132,6 @@ function PatientApp() {
         message={findMessage(screen.messageId)}
         contact={findContact(screen.contactId)}
         whatsappUrl={lastSend.whatsappUrl}
-        audioUrl={lastSend.audioUrl}
         onDone={() => setScreen({ name: "home" })}
       />
     );

@@ -18,7 +18,6 @@ export default function MessageFormPage() {
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState<CategoryId>("people");
   const [thumbColor, setThumbColor] = useState(CATEGORIES[0].colorHex);
-  const [initials, setInitials] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!isNew);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +31,6 @@ export default function MessageFormPage() {
         setTitle(m.title);
         setCategoryId(m.categoryId);
         setThumbColor(m.thumbColor);
-        setInitials(m.initials);
       } catch {
         showToast("Couldn't load that message.", "error");
         navigate("/dashboard");
@@ -50,19 +48,14 @@ export default function MessageFormPage() {
       setError("Give the message a title.");
       return;
     }
-    if (!initials.trim()) {
-      setError("Add a short fallback label (initials or an emoji).");
-      return;
-    }
-
     setSaving(true);
     try {
-      const input = { title: title.trim(), categoryId, thumbColor, initials: initials.trim() };
+      const input = { title: title.trim(), categoryId, thumbColor };
       const saved = isNew
         ? await messagesApi.createMessage(input)
         : await messagesApi.updateMessage(message!.id, input);
       setMessage(saved);
-      showToast(isNew ? "Message created. Now add video and audio." : "Message saved.");
+      showToast(isNew ? "Message created. Now add a video or image and audio." : "Message saved.");
       if (isNew) {
         navigate(`/messages/${saved.id}`, { replace: true });
       }
@@ -76,7 +69,7 @@ export default function MessageFormPage() {
   async function handleUploadVideo(file: File) {
     const updated = await messagesApi.uploadVideo(message!.id, file);
     setMessage(updated);
-    showToast("Video uploaded.");
+    showToast("Video or image uploaded.");
   }
 
   async function handleUploadAudio(file: File) {
@@ -122,32 +115,17 @@ export default function MessageFormPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="thumbColor" className="block text-sm font-medium text-ink">
-                Fallback color
-              </label>
-              <input
-                id="thumbColor"
-                type="color"
-                value={thumbColor}
-                onChange={(e) => setThumbColor(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-ink/15"
-              />
-            </div>
-            <div>
-              <label htmlFor="initials" className="block text-sm font-medium text-ink">
-                Fallback initials / emoji
-              </label>
-              <input
-                id="initials"
-                value={initials}
-                onChange={(e) => setInitials(e.target.value)}
-                maxLength={3}
-                placeholder="A"
-                className="mt-1 w-full rounded-lg border border-ink/15 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-              />
-            </div>
+          <div>
+            <label htmlFor="thumbColor" className="block text-sm font-medium text-ink">
+              Fallback color
+            </label>
+            <input
+              id="thumbColor"
+              type="color"
+              value={thumbColor}
+              onChange={(e) => setThumbColor(e.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-ink/15"
+            />
           </div>
 
           {error && <p className="text-sm font-medium text-emergency">{error}</p>}
@@ -164,11 +142,11 @@ export default function MessageFormPage() {
         <div className="mt-6 space-y-4">
           <RecorderWidget
             kind="video"
-            label="Video — so the patient can recognize the message"
-            helperText="Plays locally to confirm what the card means. It's never sent anywhere."
+            label="Video or image — so the patient can recognize the message"
+            helperText="Shown locally to confirm what the card means. It's never sent anywhere."
             currentUrl={message?.videoUrl}
             disabled={!message}
-            disabledReason="Create the message above first, then record or upload a video."
+            disabledReason="Create the message above first, then record a video or upload a video or image."
             onUpload={handleUploadVideo}
           />
           <RecorderWidget

@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import type { Message } from "../types";
 import Avatar from "./Avatar";
+import { isImageMedia } from "../utils/media";
 
 interface Props {
   message: Message;
@@ -17,15 +18,24 @@ export default function MessageCard({ message, onSelect }: Props) {
     >
       <div className="relative aspect-square w-full overflow-hidden">
         {message.videoUrl ? (
-          <video
-            src={message.videoUrl}
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
+          isImageMedia(message.videoUrl) ? (
+            <img src={message.videoUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <video
+              src={message.videoUrl}
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          )
         ) : (
           <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: message.thumbColor + "22" }}>
-            <Avatar color={message.thumbColor} label={message.initials} size="xl" rounded="card" />
+            <Avatar
+              color={message.thumbColor}
+              label={message.initials || message.title.trim().charAt(0).toUpperCase()}
+              size="xl"
+              rounded="card"
+            />
           </div>
         )}
 
