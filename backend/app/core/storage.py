@@ -44,13 +44,17 @@ _SUPABASE_HEADERS = {
 
 
 def _ext_for_content_type(content_type: str) -> str:
-    # Remove codec parameters and normalize the MIME type
-    content_type = content_type.split(";", 1)[0].strip().lower()
+    # Normalize MIME type, removing parameters like ;codecs=opus
+    base_type = (content_type or "").split(";", 1)[0].strip().lower()
 
     mapping = {
         "video/mp4": ".mp4",
         "video/webm": ".webm",
         "video/quicktime": ".mov",
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
         "audio/mpeg": ".mp3",
         "audio/mp4": ".m4a",
         "audio/x-m4a": ".m4a",
@@ -60,7 +64,7 @@ def _ext_for_content_type(content_type: str) -> str:
         "audio/ogg": ".ogg",
     }
 
-    return mapping.get(content_type, "")
+    return mapping.get(base_type, "")
 
 
 
